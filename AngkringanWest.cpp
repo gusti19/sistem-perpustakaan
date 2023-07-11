@@ -2,9 +2,10 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include <limits>
+#include <stdio.h>
+#include <iomanip>
 #include <conio.h>
-#include <cstdlib>
+#include <windows.h>
 
 using namespace std;
 
@@ -21,7 +22,7 @@ struct Buku {
 
 vector<Anggota> daftarAnggota;
 vector<Buku> daftarBuku;
-
+HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
 // Fungsi untuk membaca data anggota dari file
 void bacaDataAnggota() {
@@ -38,7 +39,6 @@ void bacaDataAnggota() {
         file.close();
     }
 }
-
 
 // Fungsi untuk membaca data buku dari file
 void bacaDataBuku() {
@@ -58,10 +58,6 @@ void bacaDataBuku() {
     }
 }
 
-
-
-
-
 // Fungsi untuk menyimpan data anggota ke file
 void simpanDataAnggota() {
     ofstream file("DaftarAnggota.txt");
@@ -73,8 +69,6 @@ void simpanDataAnggota() {
     }
 }
 
-
-
 // Fungsi untuk menyimpan data buku ke file
 void simpanDataBuku() {
     ofstream file("DaftarBuku.txt");
@@ -85,7 +79,6 @@ void simpanDataBuku() {
         file.close();
     }
 }
-
 
 // Fungsi untuk login
 bool login(string nim, string password, bool isAdmin) {
@@ -113,8 +106,7 @@ void tambahBuku() {
     daftarBuku.push_back(buku);
     
     cout << "Buku berhasil ditambahkan!" << endl;
-    simpanDataBuku();
-    
+    simpanDataBuku(); 
 }
 
 // Fungsi untuk menampilkan daftar buku
@@ -169,14 +161,11 @@ void pinjamBuku(string judul) {
     int metode;
     cout << "Pilih metode: ";
     cin >> metode;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.ignore();
 
     if (metode == 1) {
         cout << "Masukkan keyword judul buku yang ingin dipinjam: ";
         getline(cin >> ws, judul);
-
-        // Ubah keyword menjadi lowercase
-        transform(judul.begin(), judul.end(), judul.begin(), ::tolower);
     } else if (metode == 2) {
         // Tampilkan daftar buku
         tampilkanBuku();
@@ -184,7 +173,7 @@ void pinjamBuku(string judul) {
         cout << "Masukkan nomor urutan buku yang ingin dipinjam: ";
         int nomor;
         cin >> nomor;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cin.ignore();
 
         if (nomor >= 1 && nomor <= daftarBuku.size()) {
             // Ambil judul buku dari daftarBuku
@@ -200,16 +189,7 @@ void pinjamBuku(string judul) {
 
     bool found = false;
     for (auto& buku : daftarBuku) {
-        // Ubah judul buku menjadi lowercase
-        string judulBukuLower = buku.judul;
-        transform(judulBukuLower.begin(), judulBukuLower.end(), judulBukuLower.begin(), ::tolower);
-
-        // Hapus spasi di awal dan akhir status buku
-        string statusBukuTrimmed = buku.status;
-        statusBukuTrimmed.erase(0, statusBukuTrimmed.find_first_not_of(' '));
-        statusBukuTrimmed.erase(statusBukuTrimmed.find_last_not_of(' ') + 1);
-
-        if (judulBukuLower == judul && statusBukuTrimmed == "Tersedia") {
+        if (buku.judul == judul && buku.status == "Tersedia") {
             buku.status = "Terpinjam";
             found = true;
             break;
@@ -217,35 +197,76 @@ void pinjamBuku(string judul) {
     }
 
     if (found) {
-        cout << "Buku berhasil dipinjam!" << endl;
+        cout << "\nBuku berhasil dipinjam!" << endl;
         simpanDataBuku();
     } else {
-        cout << "Buku tidak tersedia atau tidak ditemukan." << endl;
+       cout << "\nBuku tidak tersedia atau tidak ditemukan." << endl;
     }
 }
 
-
-
-
 // Fungsi untuk mengembalikan buku
 void kembalikanBuku(string judul) {
-    cout << "Masukkan judul buku yang ingin dikembalikan: ";
-    getline(cin >> ws, judul);
+    string kembalikanBuku();
+    cout << "Metode Pengembalian Buku:" << endl;
+    cout << "1. Masukkan judul buku" << endl;
+    cout << "2. Pilih berdasarkan urutan nomor" << endl;
 
-    bool found = false;
-    for (auto& buku : daftarBuku) {
-        if (buku.judul == judul && buku.status == "Terpinjam") {
-            buku.status = "Tersedia";
-            found = true;
-            break;
+    int metode;
+    cout << "Pilih metode: ";
+    cin >> metode;
+    cin.ignore();
+
+    if (metode == 1) {
+        string judul;
+        cout << "Masukkan judul buku yang ingin dikembalikan: ";
+        getline(cin >> ws, judul);
+
+        bool found = false;
+        for (auto& buku : daftarBuku) {
+            if (buku.judul == judul && buku.status == "Terpinjam") {
+                buku.status = "Tersedia";
+                found = true;
+                break;
+            }
         }
-    }
 
-    if (found) {
-        cout << "Buku berhasil dikembalikan!" << endl;
-        simpanDataBuku();
+        if (found) {
+            cout << "Buku berhasil dikembalikan!" << endl;
+            simpanDataBuku();
+        } else {
+            cout << "Buku tidak dalam status terpinjam atau tidak ditemukan." << endl;
+        }
+    } else if (metode == 2) {
+        tampilkanBuku();
+
+        cout << "Masukkan nomor urutan buku yang ingin dikembalikan: ";
+        int nomor;
+        cin >> nomor;
+        cin.ignore();
+
+        if (nomor >= 1 && nomor <= daftarBuku.size()) {
+            string judul = daftarBuku[nomor - 1].judul;
+
+            bool found = false;
+            for (auto& buku : daftarBuku) {
+                if (buku.judul == judul && buku.status == "Terpinjam") {
+                    buku.status = "Tersedia";
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                cout << "Buku berhasil dikembalikan!" << endl;
+                simpanDataBuku();
+            } else {
+                cout << "Buku tidak dalam status terpinjam atau tidak ditemukan." << endl;
+            }
+        } else {
+            cout << "Nomor urutan buku tidak valid." << endl;
+        }
     } else {
-        cout << "Buku tidak dalam status terpinjam atau tidak ditemukan." << endl;
+        cout << "Pilihan metode tidak valid." << endl;
     }
 }
 
@@ -266,7 +287,33 @@ void gantiPassword(string nim) {
     cout << "Password berhasil diubah!" << endl;
 }
 
+void gotoxy(int x, int y) {
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
 
+void kop()
+{
+    
+    SetConsoleTextAttribute(h,2);
+    cout << "=============================================================\n||" ;
+    SetConsoleTextAttribute(h,6);
+    cout << "                    PERPUSTAKAAN v2.0                    " ;
+    SetConsoleTextAttribute(h,2);
+    cout << "||\n=============================================================" <<endl;
+    
+    for (int y = 3; y < 18 ; y++)
+    {
+        gotoxy(0,y);
+        cout << "||";
+        gotoxy(59,y);
+        cout << "||";
+    }   
+    gotoxy(0,18);cout << "=============================================================" <<endl;
+    SetConsoleTextAttribute(h,7); 
+}
 
 int main() {
     
@@ -276,36 +323,51 @@ int main() {
     bool isLoggedIn = false;
     bool isAdmin = false;
     string nim;
+    string namaUser;
 
     while (true) {
         if (isLoggedIn) {
+            
             if (isAdmin) {
-            	
-                cout << "\nMenu Admin:" << endl;
-                cout << "1. Tambah Buku" << endl;
-                cout << "2. Cari Buku" << endl;
-                cout << "3. Tampilkan Buku" << endl;
-                cout << "4. Tampilkan Anggota" << endl;
-                cout << "5. Ganti Password" << endl;
-                cout << "6. Keluar dari Program" << endl;
-                cout << "7. Logout" << endl;
+            	system("cls");
+                kop();
+                SetConsoleTextAttribute(h,6);
+                gotoxy(3,3);cout << "Selamat datang, ";
+                SetConsoleTextAttribute(h,4);
+                cout << namaUser << "!" << endl;
+                SetConsoleTextAttribute(h,7);
+                gotoxy(3,5);cout << "Menu Admin:" << endl;
+                gotoxy(3,6);cout << "1. Tambah Buku" << endl;
+                gotoxy(3,7);cout << "2. Cari Buku" << endl;
+                gotoxy(3,8);cout << "3. Tampilkan Buku" << endl;
+                gotoxy(3,9);cout << "4. Tampilkan Anggota" << endl;
+                gotoxy(3,10);cout << "5. Ganti Password" << endl;
+                gotoxy(3,11);cout << "6. Keluar dari Program" << endl;
+                gotoxy(3,12);cout << "7. Logout" << endl;
             } else {
-            	//	system ("cls");
-                cout << "\nMenu User Mahasiswa:" << endl;
-                cout << "1. Cari Buku" << endl;
-                cout << "2. Tampilkan Buku" << endl;
-                cout << "3. Pinjam Buku" << endl;
-                cout << "4. Kembalikan Buku" << endl;
-                cout << "5. Ganti Password" << endl;
-                cout << "6. Keluar dari Program" << endl;
-                cout << "7. Logout" << endl;
+            	system("cls");
+                kop();
+                SetConsoleTextAttribute(h,6);
+                gotoxy(3,3);cout << "Selamat datang, ";
+                SetConsoleTextAttribute(h,10);
+                cout << namaUser << "!" << endl;
+                SetConsoleTextAttribute(h,7);
+                gotoxy(3,5);cout << "Menu User Mahasiswa:" << endl;
+                gotoxy(3,6);cout << "1. Cari Buku" << endl;
+                gotoxy(3,7);cout << "2. Tampilkan Buku" << endl;
+                gotoxy(3,8);cout << "3. Pinjam Buku" << endl;
+                gotoxy(3,9);cout << "4. Kembalikan Buku" << endl;
+                gotoxy(3,10);cout << "5. Ganti Password" << endl;
+                gotoxy(3,11);cout << "6. Keluar dari Program" << endl;
+                gotoxy(3,12);cout << "7. Logout" << endl;
+                
             }
 
             int pilihan;
-            cout << "\nPilih menu: ";
+            gotoxy(3,14);cout << "Pilih menu: ";
             cin >> pilihan;
 
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cin.ignore();
 
             switch (pilihan) {
                 case 1:
@@ -322,7 +384,7 @@ int main() {
                         getline(cin >> ws, keyword);
                         cariBuku(keyword);
                     }
-                    cout << "Tekan enter untuk kembali ke menu" << endl;
+                    cout << "\nTekan enter untuk kembali ke menu" << endl;
                     getch();
                     break;
                 case 2:
@@ -336,7 +398,7 @@ int main() {
                     } else {
                     	tampilkanBuku();
 					}
-                    cout << "Tekan enter untuk kembali ke menu" << endl;
+                    cout << "\nTekan enter untuk kembali ke menu" << endl;
                     getch();
                     break;
                 case 3:
@@ -348,7 +410,7 @@ int main() {
 					else {
                         pinjamBuku(nim);
                     }
-                    cout << "Tekan enter untuk kembali ke menu" << endl;
+                    cout << "\nTekan enter untuk kembali ke menu" << endl;
                     getch();
                     break;
                 case 4:
@@ -360,7 +422,7 @@ int main() {
                     	simpanDataBuku();
                         
                     }
-                    cout << "Tekan enter untuk kembali ke menu" << endl;
+                    cout << "\nTekan enter untuk kembali ke menu" << endl;
                     getch();
                     break;
                 case 5:
@@ -370,7 +432,7 @@ int main() {
                     } else {
                         gantiPassword(nim);
                     }
-                    cout << "Tekan enter untuk kembali ke menu" << endl;
+                    cout << "\nTekan enter untuk kembali ke menu" << endl;
                     getch();
                     break;
                 case 6:
@@ -380,37 +442,42 @@ int main() {
                 case 7:
                 	isLoggedIn = false;
                     system("cls");
-                    cout << "Telah berhasil Logout. Tekan enter untuk kembali ke menu utama" << endl;
+                    cout << "Telah berhasil Logout. \nTekan enter untuk kembali ke menu utama" << endl;
                     getch();
                     system("cls");
                 	break;                          
                 default:
-                    cout << "Pilihan tidak valid." << endl;
+                    gotoxy(3,16);cout << "Pilihan tidak valid." << endl;
+                    getch();
                     break;
                 
             }
         } else {
-            cout << "\nDaftar/Login:" << endl;
-            cout << "1. Daftar" << endl;
-            cout << "2. Login" << endl;
-            cout << "3. Keluar dari Program" << endl;
-
+            system("cls");
+            kop();
+            gotoxy(3,3);cout << "Daftar/Login:" << endl;
+            gotoxy(3,5);cout << "1. Daftar" << endl;
+            gotoxy(3,6);cout << "2. Login" << endl;
+            gotoxy(3,7);cout << "3. Keluar dari Program" << endl;
+            cout << endl;
             int pilihan;
-            cout << "\nPilih menu: ";
+            gotoxy(3,9);cout << "Pilih menu: ";
             cin >> pilihan;
             cout << endl;
 
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cin.ignore();
 
             switch (pilihan) {
                 case 1:
                     {
+                        system("cls");
+                        kop();
                         string nama, nim, password;
-                        cout << "Masukkan nama: ";
+                        gotoxy(3,3);cout << "Masukkan nama: ";
                         getline(cin >> ws, nama);
-                        cout << "Masukkan NIM: ";
+                        gotoxy(3,4);cout << "Masukkan NIM: ";
                         getline(cin >> ws, nim);
-                        cout << "Masukkan password: ";
+                        gotoxy(3,5);cout << "Masukkan password: ";
                         getline(cin >> ws, password);
 
                         Anggota anggota;
@@ -419,54 +486,56 @@ int main() {
                         anggota.password = password;
                         daftarAnggota.push_back(anggota);
                         simpanDataAnggota();
+                        
+                        gotoxy(3,8);cout << "Registrasi berhasil!" << endl;
+                        getch();
                         system("cls");
-
-                        cout << "Registrasi berhasil!" << endl;
                     }
                     break;
                 case 2:
 					{
+                        system("cls");
+                        kop();
 					    string inputNIM, inputPassword;
-					    cout << "Masukkan NIM: ";
+					    gotoxy(3,3);cout << "Masukkan NIM: ";
 					    getline(cin >> ws, inputNIM);
-					    cout << "Masukkan password: ";
+					    gotoxy(3,4);cout << "Masukkan password: ";
 					    getline(cin >> ws, inputPassword);
 					
 					    isAdmin = (inputNIM == "admin");
 					    isLoggedIn = login(inputNIM, inputPassword, isAdmin);
 					    if (isLoggedIn) {
 					        nim = inputNIM;
-					        system ("cls");
-					        cout << "Login berhasil!" << endl;
-					        cout << "==========================" << endl;
-					        
+					        gotoxy(3,7);cout << "Login berhasil!" << endl;
+                            
 					        // Mencari nama user berdasarkan NIM
-					        string namaUser;
 					        for (const auto& anggota : daftarAnggota) {
 					            if (anggota.nim == inputNIM) {
 					                namaUser = anggota.nama;
 					                break;
 					            }
 					        }
-					        
-					        cout << "Selamat datang, " << namaUser << "!" << endl;
-					    } else {
+					        getch();
                             system("cls");
-					        cout << "NIM atau password salah." << endl;
+					    } else {
+					        gotoxy(3,7);cout << "NIM atau password salah." << endl;
+					        getch();
+					        system("cls");
 					    }
 					}
 					break;
 
                 case 3:
+                    system("cls");
                     cout << "Terima kasih telah menggunakan program ini. Sampai jumpa!" << endl;
                     return 0;
                 default:
                     cout << "Pilihan tidak valid." << endl;
+                    
                     break;
             }
         }
     }
-
     return 0;
 }
 
